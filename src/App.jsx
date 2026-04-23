@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext'
 import Login from './pages/Login'
 import NGODashboard from './pages/NGODashboard'
 import ProtectedRoute from './components/ProtectedRoute'
+import SubmitNeed from './pages/SubmitNeed'
 
 const App = () => {
   return (
@@ -12,7 +13,12 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
-              <NGODashboard />
+              <NGODashboard />              
+            </ProtectedRoute>
+          } />
+          <Route path='/submit' element={
+            <ProtectedRoute>
+              <SubmitNeed />
             </ProtectedRoute>
           } />
           <Route path="*" element={<Login />} />

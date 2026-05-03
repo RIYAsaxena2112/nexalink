@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import NGODashboard from './pages/NGODashboard'
 import ProtectedRoute from './components/ProtectedRoute'
 import SubmitNeed from './pages/SubmitNeed'
+import MapView from './pages/MapView'
 
 const App = () => {
   return (
@@ -21,6 +22,11 @@ const App = () => {
               <SubmitNeed />
             </ProtectedRoute>
           } />
+          <Route path='/map' element={
+            <ProtectedRoute>
+              <MapView />
+            </ProtectedRoute>
+          }/>
           <Route path="*" element={<Login />} />
         </Routes>
       </BrowserRouter>

@@ -9,11 +9,12 @@ const NGODashboard =()=>{
             <h2>Welcome, {user?.displayName}</h2>
             <button onClick={logOut}>Sign Out</button>
             <br></br>
-            <Link
-        to="/submit"
+            <Link to="/submit"
         className="bg-blue-600 text-white px-4 py-2 rounded"
-      >
-        Submit New Need
+      >Submit New Need
+      </Link>
+      <Link to="/map" className='bg-blue-600 text-white px-4 py-2 rounded'>
+      Check Map
       </Link>
         </div>
     )

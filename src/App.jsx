@@ -5,6 +5,9 @@ import NGODashboard from './pages/NGODashboard'
 import ProtectedRoute from './components/ProtectedRoute'
 import SubmitNeed from './pages/SubmitNeed'
 import MapView from './pages/MapView'
+import RoleSelection from './pages/RoleSelection'
+import VolunteerRegistration from './pages/VolunteerRegistration'
+import VolunteerDashboard from './pages/VolunteerDashboard'
 
 const App = () => {
   return (
@@ -27,6 +30,10 @@ const App = () => {
               <MapView />
             </ProtectedRoute>
           }/>
+          <Route path='/role-selection' element={<RoleSelection/>}/>
+          <Route path='/volunteer-registration' element={<VolunteerRegistration/>}/>
+          <Route path='/volunteer-dashboard' element={<VolunteerDashboard/>}/>
+          
           <Route path="*" element={<Login />} />
         </Routes>
       </BrowserRouter>

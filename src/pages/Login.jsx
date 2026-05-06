@@ -4,12 +4,22 @@ import { useAuth } from '../context/AuthContext'
 import { useEffect } from 'react'
 
 const Login =()=>{
-    const { user }=useAuth();
+    const { user,role }=useAuth();
     const navigate=useNavigate();
 
     useEffect(()=>{
-        if(user) navigate('/dashboard');
-    },[user])
+        if(user){
+             if (role === null){
+                navigate('/role-selection')
+             } 
+    else if(role === 'ngo'){
+ navigate('/dashboard')
+    } 
+    else if (role === 'volunteer') {
+        navigate('/volunteer-dashboard')
+    }
+}
+},[user,role])
 
     const handleLogin = async()=>{
         try{

@@ -3,6 +3,7 @@ import axios from "axios";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "../services/firebase"; 
 import { useAuth } from "../context/AuthContext";
+import { logOut } from "../services/auth";
 
 export default function SubmitNeed() {
     const { user }=useAuth();
@@ -87,6 +88,9 @@ const { lat, lng } = geoRes.data.data
       {message && (
         <p className="mt-3 font-medium">{message}</p>
       )}
+      <br>
+      </br>
+      <button onClick={logOut}>Sign Out</button>
     </div>
   );
 }

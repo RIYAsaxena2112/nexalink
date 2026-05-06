@@ -67,14 +67,3 @@ const VolunteerRegistration=()=>{
 
 export default VolunteerRegistration;
 
-// Your component needs:
-
-// handleSubmit that calls setDoc with { merge: true } adding skills, locationName, available: true
-// Redirect to /volunteer-dashboard on success
-{/* <label for='skill'>Skills</label>
-            <br></br>
-            <input type="checkbox" name="skill">Food</input><br></br>
-            <input type="checkbox" name="skill">Medical</input><br></br>
-            <input type="checkbox" name="skill">Rescue</input><br></br>
-            <input type="checkbox" name="skill">Shelter</input><br></br>
-            <input type="checkbox" name="skill">Logistics</input><br></br> */}

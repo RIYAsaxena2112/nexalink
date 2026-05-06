@@ -3,6 +3,7 @@ import { Loader } from "@googlemaps/js-api-loader"
 import { collection, onSnapshot } from "firebase/firestore"
 import { useEffect, useRef } from "react"
 import { db } from "../services/firebase"
+import { logOut } from "../services/auth"
 
 // ✅ create loader OUTSIDE component
 const loader = new Loader({
@@ -153,7 +154,10 @@ export default function MapView() {
     <div
       ref={mapContainerRef}
       style={{ width: "100%", height: "100vh" }}
-    />
+    >
+      <button onClick={logOut}>Sign Out</button>
+    </div>
+    
   )
 }
 

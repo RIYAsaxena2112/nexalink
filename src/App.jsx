@@ -8,6 +8,8 @@ import MapView from './pages/MapView'
 import RoleSelection from './pages/RoleSelection'
 import VolunteerRegistration from './pages/VolunteerRegistration'
 import VolunteerDashboard from './pages/VolunteerDashboard'
+import NGORoute from './components/NGORoute'
+import VolunteerRoute from './components/VolunteerRoute'
 
 const App = () => {
   return (
@@ -15,26 +17,19 @@ const App = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <NGODashboard />              
-            </ProtectedRoute>
-          } />
-          <Route path='/submit' element={
-            <ProtectedRoute>
-              <SubmitNeed />
-            </ProtectedRoute>
-          } />
-          <Route path='/map' element={
-            <ProtectedRoute>
-              <MapView />
-            </ProtectedRoute>
-          }/>
-          <Route path='/role-selection' element={<RoleSelection/>}/>
-          <Route path='/volunteer-registration' element={<VolunteerRegistration/>}/>
-          <Route path='/volunteer-dashboard' element={<VolunteerDashboard/>}/>
+         
+            <Route path='/dashboard' element={<NGORoute><NGODashboard /></NGORoute>} />
+<Route path='/submit' element={<NGORoute><SubmitNeed /></NGORoute>} />
+<Route path='/map' element={<NGORoute><MapView /></NGORoute>} />
           
-          <Route path="*" element={<Login />} />
+
+  <Route path='/volunteer-dashboard' element={<VolunteerRoute><VolunteerDashboard /></VolunteerRoute>} />
+<Route path='/volunteer-registration' element={<VolunteerRoute><VolunteerRegistration /></VolunteerRoute>} />
+
+
+
+<Route path='/role-selection' element={<ProtectedRoute><RoleSelection /></ProtectedRoute>} />
+   <Route path="*" element={<Login />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
@@ -42,3 +37,6 @@ const App = () => {
 }
 
 export default App;
+          
+          
+       

@@ -1,16 +1,30 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext";
 import { db } from "../services/firebase";
-import { collection, query, where, doc,getDoc, onSnapshot } from "firebase/firestore";
+import { collection, query, where, doc,getDoc, onSnapshot, updateDoc } from "firebase/firestore";
 import { logOut } from "../services/auth";
 import { useNavigate } from "react-router-dom";
 
 const VolunteerDashboard=()=>{
-  const { user } = useAuth()
+  const { user } = useAuth();
+
+  const handleAccept=async(needId)=>{
+     await updateDoc(doc(db, 'needs', needId), {
+  status: 'assigned',
+  assignedTo: user.uid,
+  assignedToName: user.displayName  // ← store name directly
+     })
+  }
+
+  const handleResolve=async(needId)=>{
+    await updateDoc(doc(db, 'needs', needId), {
+    status: 'resolved' 
+    })
+  }
 
 const [matchedNeeds, setMatchedNeeds] = useState([])
   useEffect(() => {
-  let unsubscribe
+  let unsubscribe;  
 
   const init = async () => {
     // 1. fetch volunteer skills
@@ -18,8 +32,8 @@ const [matchedNeeds, setMatchedNeeds] = useState([])
     const volunteerSkills = docSnap.data()?.skills || []
 
     // 2. build query
-    const q = query(collection(db, 'needs'), where('status', '==', 'pending'))
-
+    // const q = query(collection(db, 'needs'), where('status', '==', 'pending'))
+      const q = query(collection(db, 'needs'), where('status','in',['pending','assigned']))
     // 3. listen and filter
     unsubscribe = onSnapshot(q, (snapshot) => {
       const matched = snapshot.docs
@@ -45,6 +59,12 @@ const [matchedNeeds, setMatchedNeeds] = useState([])
         <p>Location: {need.locationName}</p>
         <p>{need.summary}</p>
         <p>Categories: {need.category?.join(', ')}</p>
+        {need.status === 'pending' && (
+  <button onClick={() => handleAccept(need.id)}>Accept</button>
+)}
+{need.status === 'assigned' && need.assignedTo === user.uid && (
+  <button onClick={() => handleResolve(need.id)}>Mark Resolved</button>
+)}
       </div>
     ))}
     <br></br>

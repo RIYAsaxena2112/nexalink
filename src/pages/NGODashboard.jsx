@@ -3,12 +3,15 @@ import { useAuth } from '../context/AuthContext'
 import { logOut } from '../services/auth'
 import { Link } from "react-router-dom";
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
-import { db } from '../services/firebase'
+import { db } from '../services/firebase';
+import axios from 'axios';
 
 const NGODashboard =()=>{
     const { user }=useAuth();
     const [needs, setNeeds] = useState([]);
     const [selectedNeed, setSelectedNeed] = useState(null);
+    const [explanations, setExplanations] = useState({});
+    const [loadingExplanation, setLoadingExplanation] = useState(false);
 
   const urgencyClasses = {
   high: 'bg-red-500 text-white px-2 py-1 rounded text-xs font-bold',
@@ -29,6 +32,33 @@ const statusClasses = {
   assigned: 'bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold',
   resolved: 'bg-green-500 text-white px-2 py-1 rounded text-xs font-bold',
   default: 'bg-gray-400 text-white px-2 py-1 rounded text-xs font-bold'
+}
+
+const handleUrgency = async (need, e) => {
+  e.stopPropagation()
+
+  setSelectedNeed(need)
+
+  if (explanations[need.id]) return // already generated
+  setLoadingExplanation(true)
+
+  try{
+    const res = await axios.post(
+    "http://localhost:5000/api/explain-urgency",
+    {
+      rawText: need.rawText,
+      urgency: need.urgency
+    }
+  )
+
+  setExplanations(prev => ({
+    ...prev,
+    [need.id]: res.data.explanation
+  }))
+  }finally {
+    setLoadingExplanation(false)  
+  }
+  
 }
 
 const getStatusClass = (status) => {
@@ -52,12 +82,14 @@ const getStatusClass = (status) => {
         <div>
             <header>
                 <h2>Welcome, {user?.displayName}</h2>
-                <button onClick={logOut}>Sign Out</button>
+                <button onClick={logOut} className="bg-blue-600 text-white px-4 py-2 rounded">Sign Out</button>
+                <br></br>
                 <br></br>
                 <Link to="/submit"
             className="bg-blue-600 text-white px-4 py-2 rounded"
           >Submit New Need
           </Link>
+          <br></br><br></br>
           <Link to="/map" className='bg-blue-600 text-white px-4 py-2 rounded'>
           Check Map
           </Link>
@@ -73,6 +105,7 @@ const getStatusClass = (status) => {
       <th>Affected</th>
       <th>Assigned To</th>
       <th>Status</th>
+      <th>AI Insight</th>
     </tr>
   </thead>
   <tbody>
@@ -90,6 +123,12 @@ const getStatusClass = (status) => {
         <td><span className={getStatusClass(need.status)}>
            {need.status ?? 'N/A'}
          </span></td>
+         <td><button
+  onClick={(e) => handleUrgency(need, e)}
+  className="bg-purple-600 text-white px-2 py-1 rounded"
+>
+  Explain Urgency
+</button></td>
                
       </tr>
     ))}
@@ -97,13 +136,25 @@ const getStatusClass = (status) => {
             </table>
             {selectedNeed && (
   <div>
-    <h3>Selected Need</h3>
+    <h2>Selected Need</h2>
     <p>{selectedNeed.summary}</p>
     <p>Raw text: {selectedNeed.rawText}</p>
     <p>Status: {selectedNeed.status}</p>
     <p>Assigned To: {selectedNeed.assignedToName}</p>
+    <br/>
+
+    {loadingExplanation && (
+      <p>🤖 Generating AI explanation...</p>
+    )}
     
-    <button onClick={() => setSelectedNeed(null)}>Close</button>
+        {explanations[selectedNeed.id] && (
+          <div className="bg-gray-100 p-3 rounded mt-2">
+            <b>AI Urgency Explanation:</b>
+            <p>{explanations[selectedNeed.id]}</p>
+          </div>
+        )}       
+        
+    <button onClick={() => setSelectedNeed(null)} className='bg-blue-600 text-white px-4 py-2 rounded'>Close</button>
   </div>
 )}
         </div>

@@ -1,6 +1,6 @@
 import express from 'express'
 import cors from 'cors'
-import { parseNeedWithGemini } from './geminiService.js'
+import { parseNeedWithGemini,explainUrgencyWithGemini } from './geminiService.js'
 import axios from 'axios'
 
 const app=express()
@@ -45,9 +45,6 @@ app.post('/api/geocode', async (req, res) => {
         const response = await axios.get(
   `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(locationName)}&key=${process.env.GOOGLE_MAPS_API_KEY}`
 )
-console.log('Geocoding status:', response.data.status)
-console.log('Geocoding error:', response.data.error_message)
-console.log('API KEY loaded:', process.env.GOOGLE_MAPS_API_KEY ? 'YES' : 'NO')
 const { lat, lng } = response.data.results[0].geometry.location
 res.json({
     success:true,
@@ -60,6 +57,34 @@ res.json({
             message:"Failed to retreive location",
             error:error.message,
         });
+  }
+})
+
+app.post("/api/explain-urgency", async (req, res) => {
+  try {
+
+    const { rawText, urgency } = req.body
+
+    // validation
+    if (!rawText) {
+      return res.status(400).json({
+        error: "rawText is required"
+      })
+    }    
+
+    const explanation =
+      await explainUrgencyWithGemini(rawText,urgency);
+
+    res.json({
+      explanation
+    })
+
+  } catch (error) {
+    console.error("Explain urgency error:", error)
+
+    res.status(500).json({
+      error: "Failed to generate explanation"
+    })
   }
 })
 

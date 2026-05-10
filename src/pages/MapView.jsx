@@ -1,92 +1,75 @@
-
-import { Loader } from "@googlemaps/js-api-loader"
-import { collection, onSnapshot } from "firebase/firestore"
-import { useEffect, useRef } from "react"
-import { db } from "../services/firebase"
-import { logOut } from "../services/auth"
-
-// ✅ create loader OUTSIDE component
-const loader = new Loader({
-  apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-  version: "weekly",
-  libraries: ["marker"]
-})
+import { Loader } from "@googlemaps/js-api-loader";
+import { collection, onSnapshot } from "firebase/firestore";
+import { useEffect, useRef } from "react";
+import { db } from "../services/firebase";
 
 export default function MapView() {
 
-  // DOM container
-  const mapContainerRef = useRef(null)
+  // ✅ persist instances without re-render
+  const mapRef = useRef(null);
+  const markersRef = useRef({});
+  const heatmapRef = useRef(null);
 
-  // Google map instance
-  const mapRef = useRef(null)
-
-  // Marker registry
-  const markersRef = useRef({})
-
-  // urgency color helper
+  // --------------------------------------------------
+  // Marker Color Logic
+  // --------------------------------------------------
   const getMarkerColor = (urgency) => {
-    if (!urgency) return "grey"
-    if (urgency >= 8) return "red"
-    if (urgency >= 5) return "orange"
-    return "green"
-  }
+    if (!urgency) return "grey";
+    if (urgency >= 8) return "red";
+    if (urgency >= 5) return "orange";
+    return "green";
+  };
 
   useEffect(() => {
+    let unsubscribe;
 
-    let unsubscribe
+    const loader = new Loader({
+      apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+      version: "weekly",
+      libraries: ["marker", "visualization"], // ✅ heatmap library added
+    });
 
     const initMap = async () => {
 
-      if (!mapContainerRef.current) return
+      const google = await loader.load();
 
-      const google = await loader.load()
-
-      // ✅ create map ONLY once
+      // ✅ Create map once
       if (!mapRef.current) {
         mapRef.current = new google.maps.Map(
-          mapContainerRef.current,
+          document.getElementById("map"),
           {
             center: { lat: 21.1458, lng: 79.0882 },
-            zoom: 5
+            zoom: 5,
           }
-        )
+        );
       }
 
-      const map = mapRef.current
+      const map = mapRef.current;
 
-      // ===============================
-      // 🔥 FIRESTORE REALTIME LISTENER
-      // ===============================
+      // --------------------------------------------------
+      // Firestore Realtime Listener
+      // --------------------------------------------------
       unsubscribe = onSnapshot(
         collection(db, "needs"),
         (snapshot) => {
 
+          // ==============================
+          // MARKERS
+          // ==============================
           snapshot.docChanges().forEach((change) => {
 
-            const id = change.doc.id
-            const need = change.doc.data()
+            const need = change.doc.data();
+            const id = change.doc.id;
 
-            // ✅ defensive safety checks
-            if (
-              !need.coordinates ||
-              need.coordinates.lat == null ||
-              need.coordinates.lng == null
-            ) {
-              return
-            }
+            if (!need.coordinates) return;
 
-            const position = {
-              lat: Number(need.coordinates.lat),
-              lng: Number(need.coordinates.lng)
-            }
-
-            // ===================
-            // ADDED
-            // ===================
             if (change.type === "added") {
 
               const marker = new google.maps.Marker({
-                position,
+                position: {
+                  lat: need.coordinates.lat,
+                  lng: need.coordinates.lng,
+                },
                 map,
                 icon: {
                   path: google.maps.SymbolPath.CIRCLE,
@@ -94,70 +77,60 @@ export default function MapView() {
                   fillColor: getMarkerColor(need.urgency),
                   fillOpacity: 1,
                   strokeColor: "white",
-                  strokeWeight: 2
+                  strokeWeight: 2,
                 },
-                title: need.summary || "Need"
-              })
+                title: need.summary,
+              });
 
-              markersRef.current[id] = marker
+              markersRef.current[id] = marker;
             }
 
-            // ===================
-            // MODIFIED
-            // ===================
-            if (change.type === "modified") {
-
-              const marker = markersRef.current[id]
-              if (!marker) return
-
-              marker.setPosition(position)
-
-              marker.setIcon({
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 10,
-                fillColor: getMarkerColor(need.urgency),
-                fillOpacity: 1,
-                strokeColor: "white",
-                strokeWeight: 2
-              })
-            }
-
-            // ===================
-            // REMOVED
-            // ===================
             if (change.type === "removed") {
-
-              const marker = markersRef.current[id]
-
-              if (marker) {
-                marker.setMap(null)
-                delete markersRef.current[id]
-              }
+              markersRef.current[id]?.setMap(null);
+              delete markersRef.current[id];
             }
+          });
 
-          })
+          // ==============================
+          // HEATMAP DATA
+          // ==============================
+          const heatmapData = snapshot.docs
+            .filter((d) => d.data().coordinates)
+            .map((d) => ({
+              location: new google.maps.LatLng(
+                d.data().coordinates.lat,
+                d.data().coordinates.lng
+              ),
+              weight: d.data().urgency || 1,
+            }));
+
+          // remove old heatmap
+          if (heatmapRef.current) {
+            heatmapRef.current.setMap(null);
+          }
+
+          // create new heatmap
+          heatmapRef.current =
+            new google.maps.visualization.HeatmapLayer({
+              data: heatmapData,
+              map,
+              radius: 50,
+            });
         }
-      )
-    }
+      );
+    };
 
-    initMap()
+    initMap();
 
-    // cleanup listener
     return () => {
-      if (unsubscribe) unsubscribe()
-    }
+      unsubscribe && unsubscribe();
+    };
+  }, []);
 
-  }, [])
-
-  // ✅ IMPORTANT: give container height
   return (
     <div
-      ref={mapContainerRef}
-      style={{ width: "100%", height: "100vh" }}
-    >
-      <button onClick={logOut}>Sign Out</button>
-    </div>
-    
-  )
+      id="map"
+      className="w-full h-screen"
+    />
+  );
 }
-

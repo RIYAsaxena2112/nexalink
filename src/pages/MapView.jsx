@@ -2,14 +2,16 @@ import { Loader } from "@googlemaps/js-api-loader";
 import { collection, onSnapshot } from "firebase/firestore";
 import { useEffect, useRef } from "react";
 import { db } from "../services/firebase";
+import { Link } from "react-router-dom";
+import { logOut } from "../services/auth";
 
 export default function MapView() {
 
   // ✅ persist instances without re-render
   const mapRef = useRef(null);
   const markersRef = useRef({});
-  const heatmapRef = useRef(null);
-
+  const circlesRef = useRef([])
+  
   // --------------------------------------------------
   // Marker Color Logic
   // --------------------------------------------------
@@ -26,7 +28,7 @@ export default function MapView() {
     const loader = new Loader({
       apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
       version: "weekly",
-      libraries: ["marker", "visualization"], // ✅ heatmap library added
+      libraries: ["marker"]          
     });
 
     const initMap = async () => {
@@ -90,35 +92,52 @@ export default function MapView() {
               delete markersRef.current[id];
             }
           });
+          
+// URGENCY CIRCLES
+// ==============================
+// Clear old circles
+circlesRef.current.forEach(circle => circle.setMap(null))
+circlesRef.current = []
+snapshot.docs.forEach((docSnap) => {
 
-          // ==============================
-          // HEATMAP DATA
-          // ==============================
-          const heatmapData = snapshot.docs
-            .filter((d) => d.data().coordinates)
-            .map((d) => ({
-              location: new google.maps.LatLng(
-                d.data().coordinates.lat,
-                d.data().coordinates.lng
-              ),
-              weight: d.data().urgency || 1,
-            }));
+  const data = docSnap.data();
 
-          // remove old heatmap
-          if (heatmapRef.current) {
-            heatmapRef.current.setMap(null);
-          }
+  if (!data.coordinates) return;
 
-          // create new heatmap
-          heatmapRef.current =
-            new google.maps.visualization.HeatmapLayer({
-              data: heatmapData,
-              map,
-              radius: 50,
-            });
+  const position = {
+    lat: data.coordinates.lat,
+    lng: data.coordinates.lng,
+  };
+
+  const urgency = data.urgency || 1;
+
+  let color = "#22c55e"; // green
+  let radius = 20000;
+
+  if (urgency >= 8) {
+    color = "#ef4444"; // red
+    radius = 60000;
+  } else if (urgency >= 5) {
+    color = "#f97316"; // orange
+    radius = 40000;
+  }
+
+  const circle = new google.maps.Circle({
+  strokeColor: color,
+  strokeOpacity: 0.8,
+  strokeWeight: 2,
+  fillColor: color,
+  fillOpacity: 0.2,
+  map,
+  center: position,
+  radius,
+})
+circlesRef.current.push(circle)
+})
         }
-      );
+      )
     };
+
 
     initMap();
 
@@ -127,10 +146,32 @@ export default function MapView() {
     };
   }, []);
 
-  return (
-    <div
-      id="map"
-      className="w-full h-screen"
-    />
-  );
+return (
+  <div className="relative w-full h-screen">
+    
+    {/* Floating Navbar */}
+    <nav
+      style={{ backgroundColor: 'rgba(26, 29, 39, 0.95)' }}
+      className="absolute top-0 left-0 right-0 z-10 px-6 py-4 flex items-center justify-between border-b border-gray-800"
+    >
+      <span className="text-teal-500 font-bold text-xl">NexaLink</span>
+      
+      <div className="flex gap-3 items-center">
+        <span className="text-gray-400 text-sm hidden md:block">Live Crisis Map</span>
+        <Link to="/dashboard" className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded transition text-sm">
+          Dashboard
+        </Link>
+        <button
+          onClick={logOut}
+          className="border border-gray-600 px-4 py-2 rounded hover:bg-gray-700 transition text-sm text-white"
+        >
+          Sign Out
+        </button>
+      </div>
+    </nav>
+
+    {/* Map fills full screen behind navbar */}
+    <div id="map" className="w-full h-full" />
+  </div>
+);
 }

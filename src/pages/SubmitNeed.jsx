@@ -1,17 +1,18 @@
 import { useState } from "react";
 import axios from "axios";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "../services/firebase"; 
+import { db } from "../services/firebase";
 import { useAuth } from "../context/AuthContext";
 import { logOut } from "../services/auth";
 
 export default function SubmitNeed() {
-    const { user }=useAuth();
-  // ✅ State
+  const { user } = useAuth();
+
   const [rawText, setRawText] = useState("");
+  const [locationName, setLocationName] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [locationName, setLocationName] = useState("");
+  const [isError, setIsError] = useState(false);
 
   // ✅ Submit Handler
   const handleSubmit = async (e) => {
@@ -20,21 +21,25 @@ export default function SubmitNeed() {
     try {
       setLoading(true);
       setMessage("");
+      setIsError(false);
 
-      // 1️⃣ Call backend parsing API
-      const res = await axios.post("http://localhost:5000/api/parse-need", {
-        rawText,
-      });
+      // 1️⃣ Parse Need
+      const res = await axios.post(
+        "http://localhost:5000/api/parse-need",
+        { rawText }
+      );
 
       const parsedData = res.data.data;
 
+      // 2️⃣ Geocode Location
+      const geoRes = await axios.post(
+        "http://localhost:5000/api/geocode",
+        { locationName }
+      );
 
-const geoRes = await axios.post('http://localhost:5000/api/geocode', {
-  locationName
-})
-const { lat, lng } = geoRes.data.data
+      const { lat, lng } = geoRes.data.data;
 
-      // 2️⃣ Save to Firestore
+      // 3️⃣ Save to Firestore
       await addDoc(collection(db, "needs"), {
         rawText,
         ...parsedData,
@@ -42,55 +47,100 @@ const { lat, lng } = geoRes.data.data
         coordinates: { lat, lng },
         submittedBy: user?.uid || "anonymous",
         status: "pending",
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
       });
 
-      // 3️⃣ Success UI
-      setMessage("✅ Need submitted successfully!");
+      setMessage("Need submitted successfully!");
       setRawText("");
       setLocationName("");
-
     } catch (err) {
       console.error(err);
-      setMessage("❌ Something went wrong. Try again.");
+      setIsError(true);
+      setMessage("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ UI
   return (
-    <div className="max-w-xl mx-auto p-4">
-      <h2 className="text-xl font-semibold mb-3">
-        Submit NGO Need
-      </h2>
+    // <div className="min-h-screen bg-[#0f172a] flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{backgroundColor: '#0F1117'}}>
+      {/* Card */}
+      {/* <div className="w-full max-w-xl bg-[#111827] rounded-2xl shadow-xl p-8"> */}
+      <div className="w-full max-w-lg rounded-2xl shadow-xl p-8" style={{backgroundColor: '#1A1D27'}}>
 
-      <form onSubmit={handleSubmit}>
-        <textarea
-          placeholder="Paste raw need text here..."
-          value={rawText}
-          onChange={(e) => setRawText(e.target.value)}
-          className="w-full border p-3 rounded mb-3"
-          rows={6}
-          required
-        />
-        <input type="text" id="locationName" value={locationName} placeholder="Enter location name: Dharavi, Mumbai" onChange={(e)=>setLocationName(e.target.value)} className="w-full border p-3 rounded mb-3"></input>
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold text-white">
+            Submit NGO Need
+          </h1>
+          <p className="text-gray-400 mt-2">
+            Describe what help is required and NexaLink will match volunteers.
+          </p>
+        </div>
 
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+
+          {/* Need Text */}
+          <textarea
+            placeholder="Paste raw need text here..."
+            value={rawText}
+            onChange={(e) => setRawText(e.target.value)}
+            rows={6}
+            required
+            className="w-full bg-[#020617] border border-gray-700 text-white p-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
+
+          {/* Location */}
+          <input
+            type="text"
+            placeholder="Location (e.g. Dharavi, Mumbai)"
+            value={locationName}
+            onChange={(e) => setLocationName(e.target.value)}
+            required
+            className="w-full bg-[#020617] border border-gray-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
+
+            <button
+  onClick={handleSubmit}
+  disabled={loading}
+  className={`w-full font-semibold py-3 rounded-lg transition ${
+    loading
+      ? 'bg-gray-600 cursor-not-allowed text-gray-400'
+      : 'bg-teal-500 hover:bg-teal-600 text-white'
+  }`}
+>
+  {loading ? 'Processing...' : 'Submit Need'}
+</button>
+        </form>
+
+        {/* Message */}
+        {message && (
+          <div
+            className={`mt-5 text-center p-3 rounded-lg text-sm font-medium
+            ${
+              isError
+                ? "bg-red-500/20 text-red-400"
+                : "bg-teal-500/20 text-teal-400"
+            }`}
+          >
+            {message}
+          </div>
+        )}
+
+        {/* Divider */}
+        <div className="border-t border-gray-700 my-6"></div>
+
+        {/* Sign Out */}
         <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          onClick={logOut}
+          className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-lg transition mt-4"
+          // className="w-full border border-gray-600 text-gray-300 hover:bg-gray-800 py-2 rounded-lg transition"
         >
-          {loading ? "Submitting..." : "Submit Need"}
+          Sign Out
         </button>
-      </form>
-
-      {message && (
-        <p className="mt-3 font-medium">{message}</p>
-      )}
-      <br>
-      </br>
-      <button onClick={logOut}>Sign Out</button>
+      </div>
     </div>
   );
-}
+} 

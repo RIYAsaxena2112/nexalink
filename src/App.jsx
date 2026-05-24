@@ -24,7 +24,11 @@ const App = () => {
           
 
   <Route path='/volunteer-dashboard' element={<VolunteerRoute><VolunteerDashboard /></VolunteerRoute>} />
-<Route path='/volunteer-registration' element={<VolunteerRoute><VolunteerRegistration /></VolunteerRoute>} />
+<Route path='/volunteer-registration' element={
+  <ProtectedRoute>
+    <VolunteerRegistration />
+    </ProtectedRoute>
+  } />
 
 
 

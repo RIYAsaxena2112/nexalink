@@ -79,7 +79,7 @@ const NGODashboard = () => {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/explain-urgency",
+        `${import.meta.env.VITE_API_URL}/api/explain-urgency`,
         {
           rawText: need.rawText,
           urgency: need.urgency,

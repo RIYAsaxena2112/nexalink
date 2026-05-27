@@ -25,7 +25,7 @@ export default function SubmitNeed() {
 
       // 1️⃣ Parse Need
       const res = await axios.post(
-        "http://localhost:5000/api/parse-need",
+        `${import.meta.env.VITE_API_URL}/api/parse-need`,
         { rawText }
       );
 
@@ -33,7 +33,7 @@ export default function SubmitNeed() {
 
       // 2️⃣ Geocode Location
       const geoRes = await axios.post(
-        "http://localhost:5000/api/geocode",
+        `${import.meta.env.VITE_API_URL}/api/geocode`,
         { locationName }
       );
 

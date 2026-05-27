@@ -184,14 +184,6 @@ const VolunteerDashboard = () => {
                 {/* ================= TOP ROW ================= */}
                 <div className="flex items-start justify-between mb-4">
 
-                  {/* urgency */}
-                  {/* <span
-                    className={`${getUrgencyClass(
-                      need.urgency
-                    )} px-3 py-1 rounded-full text-xs font-bold`}
-                  >
-                    {need.urgency ?? "N/A"} URGENT
-                  </span> */}
                   <span className={`${getUrgencyClass(need.urgency)} px-3 py-1 rounded-full text-xs font-bold`}>
   {need.urgency ? `${need.urgency} URGENT` : 'UNKNOWN'}
 </span>

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
 import { db } from "../services/firebase"
+import { setDoc } from "firebase/firestore"
+import { useNavigate } from 'react-router-dom'
 import {
   collection,
   query,
@@ -13,11 +15,62 @@ import {
 import { logOut } from "../services/auth"
 
 const VolunteerDashboard = () => {
-  const { user } = useAuth()
+  const { user, setRole, setRegistrationComplete } = useAuth()
+  const navigate = useNavigate() 
 
   const [matchedNeeds, setMatchedNeeds] = useState([])
 
-  /* ================================
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+    const handleResetAccount = async () => {
+  await setDoc(doc(db, 'users', user.uid), {
+    role: null,
+    registrationComplete: false,
+    skills: [],
+    locationName: '',
+    available: false
+  }, { merge: true })
+
+  setRole(null)
+  setRegistrationComplete(false)
+  navigate('/role-selection')
+}
+
+    {/* ================= RESET ACCOUNT ================= */}
+<div className="px-6 py-8 text-center">
+  {!showResetConfirm ? (
+    <button
+      onClick={() => setShowResetConfirm(true)}
+      className="text-gray-500 hover:text-red-400 text-xs transition underline"
+    >
+      Reset Account
+    </button>
+  ) : (
+    <div
+      style={{ backgroundColor: "#1A1D27" }}
+      className="max-w-sm mx-auto rounded-xl p-6 border border-red-800"
+    >
+      <p className="text-white font-semibold mb-2">Reset your account?</p>
+      <p className="text-gray-400 text-sm mb-6">
+        This will clear your role and skills. You'll need to set up your account again.
+      </p>
+      <div className="flex gap-3">
+        <button
+          onClick={() => setShowResetConfirm(false)}
+          className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg transition text-sm"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleResetAccount}
+          className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg transition text-sm"
+        >
+          Yes, Reset
+        </button>
+      </div>
+    </div>
+  )}
+</div>
+    /* ================================
       ACCEPT NEED
   ================================= */
   const handleAccept = async (needId) => {
@@ -132,6 +185,8 @@ const VolunteerDashboard = () => {
         </button>
       </nav>
 
+      
+
       {/* ================= HEADER ================= */}
       <div className="px-6 pt-8 pb-6">
         <h1 className="text-3xl font-bold">
@@ -218,12 +273,10 @@ const VolunteerDashboard = () => {
 
                   <div className="flex items-center gap-2">
                     <span>👥</span>
-                    {/* <span>
+                    <span>
                       {need.affected || "N/A"} affected
-                    </span> */}
-                    <span className={`${getUrgencyClass(need.urgency)} px-3 py-1 rounded-full text-xs font-bold`}>
-  {need.urgency ? `${need.urgency} URGENT` : 'UNKNOWN'}
-</span>
+                    </span>
+                   
                   </div>
 
                   {need.assignedToName && (
@@ -265,14 +318,27 @@ const VolunteerDashboard = () => {
                       </div>
                     )}
                 </div>
+
+                
               </div>
             ))}
           </div>
         )}
       </div>
+
+<div className="px-6 py-4 text-center">
+  <button
+    onClick={handleResetAccount}
+    className="bg-rose-700 hover:bg-rose-800 text-white font-medium text-base px-8 py-4 rounded-xl shadow-md transition"    
+  >
+    Reset Account
+  </button>
+</div>
+
     </div>
   )
 }
+
 
 /* ================================
     STAT CARD

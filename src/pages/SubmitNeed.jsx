@@ -3,6 +3,7 @@ import axios from "axios";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 import { logOut } from "../services/auth";
 
 export default function SubmitNeed() {
@@ -63,10 +64,19 @@ export default function SubmitNeed() {
   };
 
   return (
-    // <div className="min-h-screen bg-[#0f172a] flex items-center justify-center px-4">
     <div className="min-h-screen flex items-center justify-center px-4" style={{backgroundColor: '#0F1117'}}>
+
+        {/* Floating Top Right Dashboard Button */}
+    <div className="absolute top-6 right-6">
+      <Link 
+        to="/dashboard" 
+        className="text-sm font-semibold text-gray-400 hover:text-white border border-gray-800 hover:border-gray-700 bg-[#1A1D27]/80 backdrop-blur px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg"
+      >
+        Dashboard →
+      </Link>
+    </div>
+
       {/* Card */}
-      {/* <div className="w-full max-w-xl bg-[#111827] rounded-2xl shadow-xl p-8"> */}
       <div className="w-full max-w-lg rounded-2xl shadow-xl p-8" style={{backgroundColor: '#1A1D27'}}>
 
         {/* Header */}
@@ -129,14 +139,10 @@ export default function SubmitNeed() {
           </div>
         )}
 
-        {/* Divider */}
-        <div className="border-t border-gray-700 my-6"></div>
-
         {/* Sign Out */}
         <button
           onClick={logOut}
-          className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-lg transition mt-4"
-          // className="w-full border border-gray-600 text-gray-300 hover:bg-gray-800 py-2 rounded-lg transition"
+          className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-lg transition mt-4"          
         >
           Sign Out
         </button>

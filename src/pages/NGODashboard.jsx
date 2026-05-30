@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { logOut } from "../services/auth";
+import { doc, setDoc } from "firebase/firestore";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   collection,
   query,
@@ -13,12 +15,65 @@ import { db } from "../services/firebase";
 import axios from "axios";
 
 const NGODashboard = () => {
-  const { user } = useAuth();
+  const { user, setRole, setRegistrationComplete } = useAuth();
+  const navigate=useNavigate();
 
   const [needs, setNeeds] = useState([]);
   const [selectedNeed, setSelectedNeed] = useState(null);
   const [explanations, setExplanations] = useState({});
   const [loadingExplanation, setLoadingExplanation] = useState(false);
+
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+   const handleResetAccount = async () => {
+  await setDoc(doc(db, 'users', user.uid), {
+    role: null,
+    registrationComplete: false,
+    skills: [],
+    locationName: '',
+    available: false
+  }, { merge: true })
+
+  setRole(null)
+  setRegistrationComplete(false)
+  navigate('/role-selection')
+}
+
+    {/* ================= RESET ACCOUNT ================= */}
+<div className="px-6 py-8 text-center">
+  {!showResetConfirm ? (
+    <button
+      onClick={() => setShowResetConfirm(true)}
+      className="text-gray-500 hover:text-red-400 text-xs transition underline"
+    >
+      Reset Account
+    </button>
+  ) : (
+    <div
+      style={{ backgroundColor: "#1A1D27" }}
+      className="max-w-sm mx-auto rounded-xl p-6 border border-red-800"
+    >
+      <p className="text-white font-semibold mb-2">Reset your account?</p>
+      <p className="text-gray-400 text-sm mb-6">
+        This will clear your role and skills. You'll need to set up your account again.
+      </p>
+      <div className="flex gap-3">
+        <button
+          onClick={() => setShowResetConfirm(false)}
+          className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg transition text-sm"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleResetAccount}
+          className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg transition text-sm"
+        >
+          Yes, Reset
+        </button>
+      </div>
+    </div>
+  )}
+</div>
 
   /* -------------------- FIRESTORE LISTENER -------------------- */
   useEffect(() => {
@@ -105,36 +160,24 @@ const NGODashboard = () => {
   return (
     <div className="min-h-screen bg-[#0f172a] text-white">
 
-      {/* ================= NAVBAR ================= */}
       <nav
-        style={{ backgroundColor: "#1A1D27" }}
-        className="px-6 py-4 flex items-center justify-between border-b border-gray-800"
-      >
-        <span className="text-teal-500 font-bold text-xl">NexaLink</span>
+  style={{ backgroundColor: "#1A1D27" }}
+  className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between border-b border-gray-800 gap-3"
+>
+  <span className="text-teal-500 font-bold text-xl">NexaLink</span>
 
-        <div className="flex gap-3">
-          <Link
-            to="/submit"
-            className="bg-teal-500 hover:bg-teal-600 px-4 py-2 rounded"
-          >
-            Submit Need
-          </Link>
-
-          <Link
-            to="/map"
-            className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded"
-          >
-            Map
-          </Link>
-
-          <button
-            onClick={logOut}
-            className="border border-gray-600 px-4 py-2 rounded hover:bg-gray-700"
-          >
-            Sign Out
-          </button>
-        </div>
-      </nav>
+  <div className="flex flex-wrap gap-2">
+    <Link to="/submit" className="bg-teal-500 hover:bg-teal-600 px-3 py-2 rounded text-sm">
+      Submit Need
+    </Link>
+    <Link to="/map" className="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm">
+      Map
+    </Link>
+    <button onClick={logOut} className="border border-gray-600 px-3 py-2 rounded hover:bg-gray-700 text-sm">
+      Sign Out
+    </button>    
+  </div>
+</nav>
 
       {/* ================= HEADER ================= */}
       <div className="px-6 pt-6">
@@ -154,11 +197,8 @@ const NGODashboard = () => {
       </div>
 
       {/* ================= TABLE ================= */}
-      <div className="px-6 pb-10">
-        <div
-          style={{ backgroundColor: "#1A1D27" }}
-          className="rounded-xl overflow-hidden"
-        >
+              <div className="hidden md:block px-6 pb-10">
+  <div style={{ backgroundColor: "#1A1D27" }} className="rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-[#111827] text-gray-400">
               <tr>
@@ -213,6 +253,37 @@ const NGODashboard = () => {
         </div>
       </div>
 
+      {/* ================= CARDS (mobile) ================= */}
+<div className="md:hidden px-4 pb-10 space-y-4">
+  {needs.map((need) => (
+    <div
+      key={need.id}
+      onClick={() => setSelectedNeed(need)}
+      style={{ backgroundColor: "#1A1D27" }}
+      className="rounded-xl p-4 border border-gray-800 cursor-pointer hover:border-teal-500 transition"
+    >
+      <div className="flex justify-between items-start mb-2">
+        <span className={getUrgencyClass(need.urgency)}>
+          {need.urgency ?? 'N/A'}
+        </span>
+        <span className={getStatusClass(need.status)}>
+          {need.status}
+        </span>
+      </div>
+      <p className="text-sm font-medium mb-2">{need.summary}</p>
+      <p className="text-gray-400 text-xs">📍 {need.locationName}</p>
+      <p className="text-gray-400 text-xs">👥 {need.affected} affected</p>
+      <p className="text-gray-400 text-xs mt-1">{need.category?.join(', ')}</p>
+      <button
+        onClick={(e) => handleUrgency(need, e)}
+        className="mt-3 w-full bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-xs"
+      >
+        Explain Urgency
+      </button>
+    </div>
+  ))}
+</div>
+
       {/* ================= DETAIL PANEL ================= */}
       {selectedNeed && (
         <div className="fixed inset-0 bg-black/60 flex justify-end z-50">
@@ -259,6 +330,15 @@ const NGODashboard = () => {
           </div>
         </div>
       )}
+
+      <div className="px-6 py-4 text-center">
+  <button
+    onClick={handleResetAccount}
+    className="bg-rose-700 hover:bg-rose-800 text-white font-medium text-base px-8 py-4 rounded-xl shadow-md transition"
+    >
+    Reset Account
+  </button>
+</div>
     </div>
   );
 };

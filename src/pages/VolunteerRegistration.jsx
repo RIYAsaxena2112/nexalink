@@ -7,7 +7,7 @@ import { logOut } from "../services/auth"
 
 const VolunteerRegistration = () => {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, setRegistrationComplete } = useAuth()
 
   const [name, setName] = useState(user?.displayName || "")
   const [locationName, setLocationName] = useState("")
@@ -47,7 +47,7 @@ const VolunteerRegistration = () => {
         },
         { merge: true }
       )
-
+      setRegistrationComplete(true)
       navigate("/volunteer-dashboard")
     } catch (error) {
       console.error("Error registering volunteer:", error)
